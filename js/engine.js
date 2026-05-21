@@ -175,10 +175,10 @@ function tryBreakthrough() {
     if (!r) return { success: false, reason: '已达最高境界' };
     
     if (p.stage < 8) {
-        // 升小阶段：消耗所需道蕴
+        // 升小阶段：消耗所需道蕴（冲关）
         const needed = getDaoNeeded(p.realm, p.stage);
         if (p.dao_essence < needed) {
-            return { success: false, reason: `道蕴不足（还需${needed}）` };
+            return { success: false, reason: `道蕴不足——还需${needed}道蕴冲关` };
         }
         p.dao_essence -= needed;
         p.stage++;
@@ -186,22 +186,50 @@ function tryBreakthrough() {
         checkDaoTitles(); // 突破后立即检查道号条件
         return { success: true, stageUp: true, realmUp: false, realmName: r.name };
     } else {
-        // 突破大境界
+        // === 渡天劫（大境界突破） ===
         if (p.realm >= REALMS.length - 1) {
             return { success: false, reason: '已达最高境界' };
         }
         
-        // 检查条件
+        // 渡劫前置条件
         const nextRealm = REALMS[p.realm + 1];
         if (p.enlightenment < 1) {
-            return { success: false, reason: '悟道点不足（需至少1点）' };
+            return { success: false, reason: '悟道点不足——天劫需以悟道为引' };
         }
         if (p.dao_essence < getDaoNeeded(p.realm, 8)) {
-            return { success: false, reason: `未达瓶颈圆满（需${getDaoNeeded(p.realm, 8)}道蕴）` };
+            return { success: false, reason: `道蕴未达圆满——还需${getDaoNeeded(p.realm, 8)}道蕴方能引动天劫` };
         }
         if (p.spirit_stones < r.breakCost) {
-            return { success: false, reason: `灵石不足（突破需消耗${r.breakCost}灵石）` };
+            return { success: false, reason: `灵石不足——渡劫需布设阵法消耗${r.breakCost}灵石` };
         }
+        // 天劫新增条件：气血充足、灵力充沛
+        if (p.vitality < p.maxVitality * 0.5) {
+            return { success: false, reason: '气血亏空——当前气血不足五成，强行渡劫必死无疑' };
+        }
+        if (p.spirit < p.maxSpirit * 0.5) {
+            return { success: false, reason: '灵力枯竭——当前灵力不足五成，无法维持渡劫法力' };
+        }
+        // 天劫额外：玩家必须完成至少3次战斗
+        if (G.stats.battles < 3) {
+            return { success: false, reason: '未经磨砺——至少经历3场战斗方可引动天劫' };
+        }
+        
+        // 生成天劫事件
+        var tribulationTexts = [
+            '第一道天雷轰然落下！雷光贯穿你的躯体，经脉寸寸断裂又重塑。',
+            '狂风骤起，风中夹杂着天道意志的咆哮——你听到了第十六个镇守者的叹息。',
+            '地火从脚下喷涌而出，你的护体灵气在急剧消耗。稳住心神，这一劫必须自己扛过去。',
+            '天劫化形！一道模糊的身影从雷光中走出——那是你内心的心魔。',
+            '虚空裂缝在你头顶打开，归墟的气息渗透而出。你感觉自己在被世界排斥。'
+        ];
+        var tribText = tribulationTexts[Math.floor(randf() * tribulationTexts.length)];
+        
+        // 天劫伤害：根据境界扣除气血和灵力
+        var tribDamage = Math.floor(p.maxVitality * 0.3 * (1 - pillBonus));
+        p.vitality -= tribDamage;
+        p.spirit -= Math.floor(p.maxSpirit * 0.3);
+        if (p.vitality < 1) p.vitality = 1;
+        if (p.spirit < 1) p.spirit = 1;
         
         // 计算成功率
         let rate = r.breakRate;
@@ -271,7 +299,8 @@ function tryBreakthrough() {
             return {
                 success: true, stageUp: false, realmUp: true,
                 oldRealm, newRealm: p.realm, newRealmName: newR.name,
-                pillUsed: hasHeaven ? '逆命丹' : hasTrib ? '渡厄丹' : null
+                pillUsed: hasHeaven ? '逆命丹' : hasTrib ? '渡厄丹' : null,
+                tribText: tribText
             };
         } else {
             // 突破失败：消耗悟道点，道蕴不掉落
@@ -282,7 +311,7 @@ function tryBreakthrough() {
             
             return {
                 success: false,
-                reason: '突破失败！根基受损，气血上限下降10点。' +
+                reason: '天劫渡厄失败！根基受损，气血上限下降10点。' +
                     (hasHeaven ? '（逆命丹已消耗）' : hasTrib ? '（渡厄丹已消耗）' : '')
             };
         }
@@ -1797,4 +1826,52 @@ function triggerAdReward(adId) {
         reward={type:'建筑灵石减半',amount:1};
     }
     return {success:true,reward:reward};
+}
+
+// ========== 挖矿系统 ==========
+function calcMiningOutput() {
+    if (!G) return { ores: 0, spirit_stones: 0, beast_materials: 0 };
+    var p = G.player;
+    var realmBonus = 1 + p.realm * 0.5;
+    var miningLv = G.stats.miningLevel || 1;
+    var baseOre = Math.floor((2 + miningLv) * realmBonus);
+    // 基础矿石产出
+    var ores = baseOre + rand(-1, 2);
+    if (ores < 1) ores = 1;
+    // 概率附带灵石
+    var stones = 0;
+    if (randf() < 0.3 + p.realm * 0.05) stones = rand(1, 5 + p.realm * 2) * miningLv;
+    // 低概率妖材
+    var beast = 0;
+    if (randf() < 0.1 + p.realm * 0.02) beast = rand(1, 2);
+    return { ores: ores, spirit_stones: stones, beast_materials: beast };
+}
+
+function doMining() {
+    if (!G) return { success: false, reason: '' };
+    var p = G.player;
+    var cost = 5 + p.realm * 2; // 消耗灵力
+    if (p.spirit < cost) return { success: false, reason: '灵力不足，需要' + cost + '灵力' };
+    p.spirit -= cost;
+    var output = calcMiningOutput();
+    p.ores += output.ores;
+    if (output.spirit_stones > 0) p.spirit_stones += output.spirit_stones;
+    if (output.beast_materials > 0) p.beast_materials += output.beast_materials;
+    // 挖矿经验
+    G.stats.miningLevel = (G.stats.miningLevel || 1) + 0.02;
+    // 随机深度事件
+    var depthEvent = null;
+    if (randf() < 0.05) {
+        var events = [
+            { text: '你挖到了一条小型灵石矿脉！', rewards: { spirit_stones: rand(20, 50 + p.realm * 10) } },
+            { text: '矿洞深处发现了一具远古遗骸，旁边散落着几枚功诀残页。', rewards: { technique_fragments: rand(1, 3) } },
+            { text: '你惊动了一头沉睡的地底妖兽！虽然险象环生，但也收获了不少妖材。', rewards: { beast_materials: rand(3, 8) } },
+            { text: '一株罕见的石中灵药在矿壁上生长，你小心翼翼地采了下来。', rewards: { herbs: rand(3, 10) } }
+        ];
+        depthEvent = events[Math.floor(randf() * events.length)];
+        for (var k in depthEvent.rewards) {
+            if (p[k] !== undefined) p[k] += depthEvent.rewards[k];
+        }
+    }
+    return { success: true, ores: output.ores, stones: output.spirit_stones, beast: output.beast_materials, event: depthEvent };
 }
