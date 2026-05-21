@@ -337,13 +337,13 @@ function renderCultivate(){
         var hasEnough=p.dao_essence>=REALMS[p.realm].daoCost&&p.enlightenment>=1&&p.spirit_stones>=REALMS[p.realm].breakCost;
         hl('瓶颈已至');dim('道蕴 '+p.dao_essence+'/'+REALMS[p.realm].daoCost+' 悟道 '+p.enlightenment+' 灵石 '+p.spirit_stones+'/'+REALMS[p.realm].breakCost);
         dim('成功率 '+(REALMS[p.realm].breakRate*100).toFixed(0)+'%');
-        btnsList.push({text:'[ 尝试突破 ]',cb:function(){doBreakthrough();},pri:true,dis:!hasEnough},{text:'[ 继续修炼 ]',cb:function(){doCultivateInner();renderCultivate();}});
+        btnsList.push({text:'[ 渡天劫 ]',cb:function(){doBreakthrough();},pri:true,dis:!hasEnough},{text:'[ 继续修炼 ]',cb:function(){doCultivateInner();renderCultivate();}});
     }else{
         t('道蕴 '+p.dao_essence+' / 需要 '+getDaoForStage(p.realm,p.stage+1)+' 突破阶段');
         // ★ 每次进入修炼页时检查道号
         var rtitles=checkDaoTitles();for(var rti=0;rti<rtitles.length;rti++){hl('[ 道号 ] ★ 获封尊号【'+rtitles[rti].name+'】');}
         btnsList.push({text:'[ 修炼一次 ]',cb:function(){doCultivateInner();renderCultivate();},pri:true});
-        btnsList.push({text:'[ 突破阶段 ]',cb:function(){var r=tryBreakthrough();if(r.success){he('[ '+r.realmName+' 第'+['一','二','三','四','五','六','七','八','九'][G.player.stage-1]+'转达成 ]');toast('突破','suc');// ★ 突破后检查道号
+        btnsList.push({text:'[ 冲关 ]',cb:function(){var r=tryBreakthrough();if(r.success){he('[ '+r.realmName+' 第'+['一','二','三','四','五','六','七','八','九'][G.player.stage-1]+'转达成 ]');toast('冲关','suc');// ★ 突破后检查道号
             var btitles=checkDaoTitles();for(var bti=0;bti<btitles.length;bti++){hl('[ 道号 ] ★ 获封尊号【'+btitles[bti].name+'】');}}else dang(r.reason);renderCultivate();},suc:true});
         // 三条道路入口
         div();hl('[ 三条修行大道 ]');dim('选择你的修炼方向：霸道(战斗)/王道(建设)/天道(探索)');
@@ -446,15 +446,17 @@ function doBreakthrough(){
     var r=tryBreakthrough();
     G.player._breakingThrough=false;
     if(r.success&&r.realmUp){
-        clearStory();title('* 天劫破境');scBig('* '+r.newRealmName+' *');t('天地变色！经脉重塑。');
-        if(r.pillUsed)dim('（'+r.pillUsed+'帮你抵挡了反噬。）');
+        clearStory();title('* 渡天劫 · 破境');scBig('* '+r.newRealmName+' *');
+        if(r.tribText){hl('⚡ '+r.tribText);}
+        t('天地变色！你承受住了天劫的洗礼，经脉重塑，踏入全新境界。');
+        if(r.pillUsed)dim('（'+r.pillUsed+'帮你抵挡了部分反噬。）');
         // ★ 关联4：道号突破特效（荒级道号触发天劫异象）
         var eqTitle=getEquippedTitle();
         if(eqTitle&&eqTitle.rarity>=5){hl('✦ 佩戴荒级道号「'+eqTitle.name+'」，天地共鸣！额外悟道点+1！');G.player.enlightenment=(G.player.enlightenment||0)+1;}
         if(G.player._breakPillage){hl('✦ 霸道·破境掠夺 从「'+G.player._breakPillageName+'」处掠夺道蕴 +'+G.player._breakPillage);G.player._breakPillage=null;G.player._breakPillageName='';}
-        toast('* 突破成功！'+r.newRealmName+' *','suc');btns([{text:'[ 继续 ]',cb:renderMain,pri:true}]);saveGame();
+        toast('* 渡劫成功！踏入'+r.newRealmName+' *','suc');btns([{text:'[ 继续 ]',cb:renderMain,pri:true}]);saveGame();
     }
-    else{dang(r.reason||'突破失败');toast('突破失败','dan');renderCultivate();}
+    else{dang(r.reason||'渡劫失败');toast('渡劫失败','dan');renderCultivate();}
 }
 
 // 城镇(仅保留核心函数，避免过长)
@@ -478,7 +480,7 @@ function renderTown(){
     if(G.player.tribulationsPassed===1&&!G._tribShown1){G._tribShown1=true;hl('✦ 人道劫·一 已渡！全属性+20%');dim('繁荣度达到50时触发，你的王道之道已显现。');}
     if(G.player.tribulationsPassed===2&&!G._tribShown2){G._tribShown2=true;hl('✦ 人道劫·二 已渡！城镇产出翻倍！');dim('繁荣度达到100时触发，万民归心，百业俱兴。');}
     for(var a=0;a<BUILDINGS.length;a++){var b=BUILDINGS[a];var lv=getBuildingLevel(b.id);var cost=getUpgradeCost(b.id);var check=canUpgradeBuilding(b.id);var line=b.name;if(lv>0)line+=' Lv.'+lv+'/'+b.maxLevel;else line+=' [未建]';t(line);if(cost&&check.can){var cs=[];for(var ck in cost){var rn=RESOURCES[ck]?RESOURCES[ck].name:ck;cs.push(rn+':'+cost[ck]);}info('升级需：'+cs.join(' '));}else if(cost)dim(check.reason);}
-    btns([{text:'[ 升级建筑 ]',cb:function(){showBuildMenu();},pri:true},{text:'[ 总收入 ]',cb:function(){showTownDetail();},sm:true},{text:'[ 返回主页 ]',cb:renderMain}]);
+    btns([{text:'[ 升级建筑 ]',cb:function(){showBuildMenu();},pri:true},{text:'[ 总收入 ]',cb:function(){showTownDetail();},sm:true},{text:'[ 矿坑 ]',cb:function(){showMining();},sm:true},{text:'[ 返回主页 ]',cb:renderMain}]);
 }
 function showBuildMenu(){
     clearStory();title('* 选择升级');var list=[];
@@ -504,6 +506,29 @@ function showTownDetail(){
     div();dim('全部建筑收益：');
     for(var a=0;a<BUILDINGS.length;a++){var b=BUILDINGS[a];var lv=getBuildingLevel(b.id);if(lv>0){var e=b.effects(lv);var ef=[];for(var ek in e){if(typeof e[ek]==='number'){var label=effectLabels[ek]||ek;ef.push(label+':'+e[ek].toFixed(2));}}if(ef.length)info(b.name+' Lv.'+lv+' '+ef.join(' | '));}}
     btns([{text:'[ 返回 ]',cb:renderTown}]);
+}
+
+// 挖矿界面
+function showMining(){
+    clearStory();title('* 废弃矿坑');
+    var mlv = Math.floor(G.stats.miningLevel || 1);
+    dim('镇东废弃的灵铁矿坑。挥动镐头，挖掘深埋的矿石与灵石。');
+    info('当前挖矿等级：Lv.'+mlv+' | 灵力消耗：'+(5+G.player.realm*2));
+    div();
+    
+    // 快速挖矿
+    btns([{text:'[ 挥镐挖掘 ]',cb:function(){
+        var r=doMining();
+        if(!r.success){toast(r.reason,'dan');return;}
+        var msg='获得 矿石 +'+r.ores;
+        if(r.stones>0)msg+='、灵石 +'+r.stones;
+        if(r.beast>0)msg+='、妖材 +'+r.beast;
+        he(msg);
+        if(r.event){hl('✦ '+r.event.text);}
+        renderRes();
+        // 自动刷新界面
+        setTimeout(showMining,500);
+    },pri:true},{text:'[ 返回城镇 ]',cb:renderTown}]);
 }
 
 // 探索
@@ -906,6 +931,10 @@ function showLoadGame(){
     }
     grid.appendChild(card);}
     D.actions.appendChild(grid);
+    // 判断是否有任意存档
+    var anySave=false;for(var si=0;si<3;si++){var si2=getSaveInfo(si);if(si2.exists){anySave=true;break;}}
+    if(!anySave){div();dim('尚无存档——请先点击「✦ 踏入洪荒」开始你的修行之路。');}
+    btns([{text:'[ 新建游戏 ]',cb:showNewGame,pri:true},{text:'[ 快速读档 ]',cb:function(){doLoadGame(0);}}]);
 }
 function doLoadGame(slot){
     if(loadGame(slot)){
