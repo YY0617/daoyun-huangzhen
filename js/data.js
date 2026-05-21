@@ -657,7 +657,7 @@ const STORY_CHAPTERS = [
     },
     {
         title: '天道的碎片',
-        text: '灵脉阵运转起来的那一刻，你感觉到脚下的地面微微震颤。一股微弱但确实存在的灵气从地底升腾而起。\n\n尘虚子难得露出了认真的表情。"感觉到了吗？这个世界……是有伤的。"\n\n他指了指天空。"这里的"天道"不是完整的。它像一块被打碎的玉，你我现在就站在其中一块碎片上。\n\n"那……其他的碎片呢？"\n\n"飘在虚空中。有些被大能占据了，有些散落在谁都够不到的地方。还有一些……正在崩塌。"\n\n他的独眼盯着你。"知道为什么你是第十七个镇守者吗？因为前十六个，都被这片天地的真相吓跑了——或者说，被"归墟"吃掉了。"',
+        text: '灵脉阵运转起来的那一刻，你感觉到脚下的地面微微震颤。一股微弱但确实存在的灵气从地底升腾而起。\n\n尘虚子难得露出了认真的表情。"感觉到了吗？这个世界……是有伤的。"\n\n他指了指天空。"这里的"天道"不是完整的。它像一块被打碎的玉，你我现在就站在其中一块碎片上。\n\n"那……其他的碎片呢？"\n\n"飘在虚空中。有些被大能占据了，有些散落在谁都够不到的地方。还有一些……正在崩塌。"\n\n他的独眼盯着你。"知道为什么你是第十七个镇守者吗？因为前十六个，都被这片天地的真相吓跑了——或者说，被"归墟"吃掉了。"\n\n他顿了顿，从袖中掏出一块泛着金属光泽的石头。"对了，这个给你。镇东废弃矿坑里还能挖到一些灵铁矿——**【城镇】→【灵脉阵】升级需要矿石，先去矿坑采集一些吧。**"',,
         rewards: { dao_essence: 30, technique_fragments: 3 },
         nextQuest: '提升修为至玄脉',
         condition: { minRealm: 0, buildings: { spirit_vein: 1 } }
@@ -908,7 +908,7 @@ const LEADERBOARDS = [
             { name:'柳如烟', title:'烟雨剑法', realm:0, stage:9, powerBase:2200, powerRange:300, story:'江南柳家剑修。', rivals:[] },
             { name:'石破天', title:'力拔山兮', realm:0, stage:7, powerBase:1500, powerRange:200, story:'莽荒之地走出的巨力修士。', rivals:['云中子'] },
             { name:'云中子', title:'云游散修', realm:0, stage:5, powerBase:1200, powerRange:200, story:'不知来历的白发散修。', rivals:['石破天'] },
-            { name:'叶小钗', title:'疾风剑', realm:0, stage:4, powerBase:800, powerRange:150, story:'十五岁少女剑修。', rivals:[] },
+            { name:'叶小钗', title:'疾风剑', realm:0, stage:6, powerBase:1100, powerRange:100, story:'十五岁少女剑修，剑速如风。', rivals:[] },
         ]
     },
     {
@@ -1129,7 +1129,8 @@ function getInitialState(playerName) {
             totalSpent: 0,
             expeditions: 0,
             pillsCrafted: 0,
-            eventsTriggered: 0
+            eventsTriggered: 0,
+            miningLevel: 1
         },
         lastSave: Date.now()
     };
