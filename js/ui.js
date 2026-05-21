@@ -116,7 +116,9 @@ function renderStatContent(){
 
 // 道号选择弹窗（在状态面板点击道号行触发）
 function cycleTitle(){
+    checkDaoTitles(); // ★ 进入时检查道号
     var owned=G&&G.titles?G.titles:[];
+    console.log('[道号-选择] G.titles:', JSON.stringify(G.titles));
     if(owned.length===0){toast('尚未获得任何道号','dan');return;}
     var current=G.equippedTitle;
     // 先关状态面板
@@ -448,9 +450,12 @@ function doCultivateInner(){
         G.player.dao_essence+=output.dao_essence;
         if(output.enlightenment)G.player.enlightenment+=output.enlightenment;
     }
-    if(output&&output.fusion){hl('✦ 天人合一！修炼效果×10！');
-    }else{var msgs=['盘膝凝神，引气入体。','气行周天，道蕴渐生。','灵气如细流汇入丹田。','天地道韵微震。'];dim(msgs[Math.floor(Math.random()*msgs.length)]);}
-    he('道蕴 +'+(output?output.dao_essence:0)+(output&&output.enlightenment?' 悟道点 +'+output.enlightenment:''));
+    // ★ 只在修炼界面显示提示文本，其他界面仅刷新资源
+    if(typeof curTab!=='undefined'&&curTab==='cultivate'){
+        if(output&&output.fusion){hl('✦ 天人合一！修炼效果×10！');
+        }else{var msgs=['盘膝凝神，引气入体。','气行周天，道蕴渐生。','灵气如细流汇入丹田。','天地道韵微震。'];dim(msgs[Math.floor(Math.random()*msgs.length)]);}
+        he('道蕴 +'+(output?output.dao_essence:0)+(output&&output.enlightenment?' 悟道点 +'+output.enlightenment:''));
+    }
     G.player._cultivateCount=(G.player._cultivateCount||0)+1;
     if(G.player._cultivateCount%5===0)saveGame();
     renderRes();
@@ -665,7 +670,10 @@ function showSettings(){if(!D||!D.storyInner)initDOM();if(D.splash&&D.splash.sty
 // 道号展示（可点击佩戴）
 function showDaoTitles(){
     closeMenu();clearStory();title('* 万道图录 · 道号');
-    checkDaoTitles(); // 进入时重新检查所有道号条件
+    // ★ 强制重新检查所有道号条件
+    if(!G.titles)G.titles=[];
+    var newTitles=checkDaoTitles();
+    console.log('[道号] G.titles:', JSON.stringify(G.titles), '新增:', newTitles.length);
     var owned=G&&G.titles?G.titles:[];
     var rarityNames=['','凡','精','奇','绝','荒'];
     // 当前佩戴
@@ -955,6 +963,7 @@ function doLoadGame(slot){
     if(loadGame(slot)){
         transitionToGame();
         setTimeout(function(){
+            checkDaoTitles(); // ★ 加载存档时立即检查道号
             var gains=processOfflineGains();startAutoTick();renderMain();
             if(gains&&gains.effectiveTime>0){
                 var msgs=[];if(gains.spirit_stones)msgs.push('灵石+'+gains.spirit_stones);if(gains.herbs)msgs.push('药材+'+gains.herbs);
