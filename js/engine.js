@@ -18,8 +18,12 @@ function createNewGame(name) {
     // 初始建筑：镇道殿Lv1
     G.town.buildings['town_hall'] = 1;
     G.town.buildings['spirit_vein'] = 0;
-    // 初始化探索区域状态
-    EXPLORE_AREAS.forEach(a => {
+    // 初始化探索区域状态（合并额外区域）
+    var allAreas = EXPLORE_AREAS;
+    if (typeof EXPLORE_AREAS_EXTRA !== 'undefined') {
+        allAreas = EXPLORE_AREAS.concat(EXPLORE_AREAS_EXTRA);
+    }
+    allAreas.forEach(a => {
         G.exploration.areas[a.id] = { discovered: false, exploredCount: 0 };
     });
     // 随机天命命格
@@ -119,25 +123,36 @@ function getDaoForStage(realmId, stage) {
     return Math.floor(r.daoCost * stage * 0.06);  // 每小阶约6%，8小阶=48%
 }
 
-// 获取下一阶段所需道蕴差值
+// 获取下一阶段所需道蕴（小阶为门槛值，大境界为消耗值）
 function getDaoNeeded(realmId, stage) {
-    if (stage >= 8) return Math.floor(REALMS[realmId].daoCost * 0.52); // 大境界突破消耗
+    if (stage >= 8) return REALMS[realmId].daoCost; // 大境界突破需 daoCose 道蕴
     return getDaoForStage(realmId, stage + 1) - getDaoForStage(realmId, stage);
 }
 
-// 计算修炼产出（道蕴累积不消耗！只增不减）
+// ========== 修炼产出（次指数增长） ==========
 function calcCultivationOutput() {
     if (!G) return { dao_essence: 0, enlightenment: 0 };
     const r = REALMS[G.player.realm];
     if (!r) return { dao_essence: 0, enlightenment: 0 };
     
-    // 基础产出随境界指数增长 (2→20 dao/click)
-    const daoBase = 2 + G.player.realm * 2;
+    // ★ P0#1 次指数增长修炼产出
+    // 原：daoBase = 2 + realm * 2  (线性)
+    // 新：daoBase = 2 + pow(2, realm*0.5) * 3  (次指数)
+    const daoBase = 2 + Math.pow(2, G.player.realm * 0.5) * 3;
     const libLv = G.town.buildings['library'] || 0;
     const libBonus = 1 + libLv * 0.18;
+    // 灵脉阵加成
+    const veinLv = G.town.buildings['spirit_vein'] || 0;
+    const veinBonus = 1 + veinLv * 0.05;
     
-    const daoPerAction = Math.floor(daoBase * libBonus * (0.9 + randf() * 0.2));
-    const enlPerAction = randf() < 0.12 + G.player.realm * 0.02 ? rand(1, 2) : 0;
+    const daoPerAction = Math.floor(daoBase * libBonus * veinBonus * (0.9 + randf() * 0.2));
+    
+    // ★ P0#3 悟道点产出提升
+    // 原：randf() < 0.12 + realm*0.02 ? rand(1,2) : 0
+    // 新：随境界提升基础概率和数量
+    const enlChance = 0.15 + G.player.realm * 0.03;
+    const enlMax = 1 + Math.floor(G.player.realm / 2);
+    const enlPerAction = randf() < enlChance ? rand(1, enlMax) : 0;
     
     // 城镇繁荣度加成
     const prosBonus = Math.floor(G.town.prosperity * 0.02);
@@ -175,12 +190,12 @@ function tryBreakthrough() {
     if (!r) return { success: false, reason: '已达最高境界' };
     
     if (p.stage < 8) {
-        // 升小阶段：消耗所需道蕴（冲关）
+        // ★ P0#2 小阶段只检验门槛，不消耗道蕴（大境界才消耗）
         const needed = getDaoNeeded(p.realm, p.stage);
         if (p.dao_essence < needed) {
-            return { success: false, reason: `道蕴不足——还需${needed}道蕴冲关` };
+            return { success: false, reason: `道蕴不足（还需${Math.floor(needed - p.dao_essence)}）` };
         }
-        p.dao_essence -= needed;
+        // 不消耗道蕴
         p.stage++;
         if(p.stage>p.maxStage)p.maxStage=p.stage; // 记录历史最高阶段
         checkDaoTitles(); // 突破后立即检查道号条件
@@ -258,7 +273,8 @@ function tryBreakthrough() {
             const oldRealm = p.realm;
             p.spirit_stones -= r.breakCost;
             p.enlightenment--;
-            p.dao_essence -= getDaoNeeded(p.realm, 8);
+            // ★ P0#2 大境界突破消耗 daoCose 道蕴的 50%
+            p.dao_essence = Math.floor(p.dao_essence * 0.5);
             if (p.dao_essence < 0) p.dao_essence = 0;
             p.realm++;
             p.stage = 0;
@@ -401,10 +417,20 @@ function generateEnemy(difficulty) {
     };
 }
 
-function doBattle(enemy) {
+// ★ P0#5 战斗技能系统
+const BATTLE_SKILLS = {
+    basic_attack: { name: '普通攻击', type: 'attack', multiplier: 1.0, cost: 0, desc: '基础攻击' },
+    heavy_strike: { name: '重击', type: 'attack', multiplier: 1.8, cost: 5, desc: '消耗5灵力造成1.8倍伤害' },
+    defend: { name: '防御', type: 'defend', multiplier: 0.5, cost: 0, desc: '本回合承伤减半' },
+    meditate: { name: '调息', type: 'heal', multiplier: 0.15, cost: 0, desc: '恢复15%气血' }
+};
+
+function doBattle(enemy, playerSkill) {
     if (!G) return { win: false, log: [], enemy: enemy };
+    if (!playerSkill) playerSkill = 'basic_attack';
     const p = calcPlayerPower();
     const log = [];
+    const skill = BATTLE_SKILLS[playerSkill] || BATTLE_SKILLS.basic_attack;
     
     log.push({ text: `⚔ 你遭遇了 ${enemy.name}（战力约${enemy.power}）`, type: 'combat' });
     log.push({ text: `你的气血：${p.hp} | 敌方气血：${enemy.maxHp}`, type: 'combat' });
@@ -418,22 +444,42 @@ function doBattle(enemy) {
     while (pHp > 0 && eHp > 0 && rounds < maxRounds) {
         rounds++;
         
-        // 玩家攻击
-        const pDmg = Math.max(1, p.atk - enemy.def + rand(-2, 4));
-        const pCrit = randf() < 0.1 ? 2 : 1;
-        const pFinal = Math.floor(pDmg * pCrit);
-        eHp -= pFinal;
+        // 玩家回合（技能系统）
+        let pFinal = 0;
+        let defending = false;
+        let pSpirit = G.player.spirit;
         
-        if (pCrit > 1) {
-            log.push({ text: `[${rounds}] 你暴击！${pFinal}点伤害 ➜ 敌方剩余${Math.max(0,eHp)}气血`, type: 'combat_crit' });
-        } else {
-            log.push({ text: `[${rounds}] 你造成${pFinal}点伤害 ➜ 敌方剩余${Math.max(0,eHp)}气血`, type: 'combat' });
+        if (skill.type === 'attack') {
+            const pDmg = Math.max(1, Math.floor(p.atk * skill.multiplier) - enemy.def + rand(-2, 4));
+            const pCrit = randf() < 0.1 ? 2 : 1;
+            pFinal = Math.floor(pDmg * pCrit);
+            eHp -= pFinal;
+            if (skill.cost > 0) { pSpirit -= skill.cost; G.player.spirit = Math.max(0, pSpirit); }
+        } else if (skill.type === 'defend') {
+            defending = true;
+            pFinal = 0;
+        } else if (skill.type === 'heal') {
+            const heal = Math.floor(p.hp * skill.multiplier);
+            pHp = Math.min(p.hp, pHp + heal);
+            pFinal = 0;
+        }
+        
+        if (pFinal > 0) {
+            if (pCrit > 1) {
+                log.push({ text: `[${rounds}] 你${skill.name}暴击！${pFinal}伤害 ➜ 敌方剩余${Math.max(0,eHp)}血`, type: 'combat_crit' });
+            } else {
+                log.push({ text: `[${rounds}] 你${skill.name}造成${pFinal}伤害 ➜ 敌方剩余${Math.max(0,eHp)}血`, type: 'combat' });
+            }
+        } else if (skill.type === 'defend') {
+            log.push({ text: `[${rounds}] 你摆出防御姿态`, type: 'combat' });
+        } else if (skill.type === 'heal') {
+            log.push({ text: `[${rounds}] 你调息恢复${Math.floor(p.hp * skill.multiplier)}气血`, type: 'combat' });
         }
         
         if (eHp <= 0) break;
         
         // 敌方攻击
-        const eDmg = Math.max(1, enemy.atk - p.def + rand(-2, 3));
+        const eDmg = Math.max(1, enemy.atk - (defending ? p.def * 2 : p.def) + rand(-2, 3));
         const eCrit = randf() < 0.08 ? 2 : 1;
         const eFinal = Math.floor(eDmg * eCrit);
         pHp -= eFinal;
