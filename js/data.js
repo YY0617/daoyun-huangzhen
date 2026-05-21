@@ -1161,8 +1161,8 @@ function getInitialState(playerName) {
             completed_chapters: []
         },
         achievements: {},
-        titles: [],
-        equippedTitle: null, // 已获得道号id列表
+        titles: [], // 已获得道号id列表
+        equippedTitle: null,
         factionEvents: {
             triggered: []
         },
