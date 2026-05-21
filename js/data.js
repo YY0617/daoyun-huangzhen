@@ -477,6 +477,60 @@ const EXPLORE_AREAS = [
     }
 ];
 
+// ========== 探索区域·后期扩展 ==========
+const EXPLORE_AREAS_EXTRA = [
+    {
+        id: 'celestial_tomb',
+        name: '天道冢', icon: '🏛',
+        desc: '传说中破碎天道的一角坠落于此。无数修士在此追寻成道之机，也有无数人永远留在了这里。',
+        minRealm: 6,
+        minRealmName: '冠绝',
+        difficulties: [
+            { name: '外围石林', time: 8, risk: 0.45, rewardMult: 1.5, desc: '破碎的玉简和法器散落一地' },
+            { name: '内殿', time: 15, risk: 0.65, rewardMult: 2.5, desc: '坍塌的大殿中仍有禁制运转' },
+            { name: '核心·道台', time: 25, risk: 0.85, rewardMult: 4.0, desc: '接近天道碎片的坠落点' }
+        ],
+        loot: {
+            technique_fragments: { min: 10, max: 50, rate: 0.8 },
+            spirit_stones: { min: 100, max: 1000, rate: 0.7 },
+            dao_essence: { min: 50, max: 300, rate: 0.6 },
+            enlightenment: { min: 1, max: 3, rate: 0.15 }
+        },
+        events: [
+            { type: 'combat', weight: 30 },
+            { type: 'treasure', weight: 25 },
+            { type: 'trap', weight: 20 },
+            { type: 'story', weight: 20 },
+            { type: 'rest', weight: 5 }
+        ]
+    },
+    {
+        id: 'endless_sea',
+        name: '无尽海', icon: '🌊',
+        desc: '碎片世界的边缘——一片没有边界的海域。海水是半透明的，你能看到海底的虚无。在这里，空间和时间都不太可靠。',
+        minRealm: 8,
+        minRealmName: '圣君',
+        difficulties: [
+            { name: '浅海区', time: 12, risk: 0.60, rewardMult: 2.0, desc: '海水之下隐约可见建筑的废墟' },
+            { name: '深渊', time: 20, risk: 0.75, rewardMult: 3.5, desc: '光线在这里被吞噬' },
+            { name: '归墟之眼', time: 30, risk: 0.90, rewardMult: 5.0, desc: '世界的尽头' }
+        ],
+        loot: {
+            spirit_stones: { min: 500, max: 5000, rate: 0.8 },
+            technique_fragments: { min: 20, max: 100, rate: 0.7 },
+            enlightenment: { min: 1, max: 5, rate: 0.2 },
+            ores: { min: 50, max: 200, rate: 0.5 }
+        },
+        events: [
+            { type: 'combat', weight: 25 },
+            { type: 'treasure', weight: 20 },
+            { type: 'trap', weight: 25 },
+            { type: 'story', weight: 25 },
+            { type: 'rest', weight: 5 }
+        ]
+    }
+];
+
 // ========== 势力定义 ==========
 const FACTIONS = {
     righteous_alliance: {
