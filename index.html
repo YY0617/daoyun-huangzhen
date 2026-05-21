@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="洪荒镇道">
+    <title>道韵·洪荒镇道</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
+    <link rel="apple-touch-icon" href="icons/icon-192.svg">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- 启动动画 -->
+<div id="splash">
+    <div class="splash-bg" style="background-image:url('bg.png')"></div>
+    <div class="splash-overlay"></div>
+    <div class="splash-content">
+        <h1 class="splash-title">道韵·洪荒镇道</h1>
+        <p class="splash-sub">天道崩碎 · 边荒镇守</p>
+        <div class="splash-buttons" id="splashActions">
+            <button class="splash-btn primary" onclick="showNewGame()">✦ 踏入洪荒</button>
+            <button class="splash-btn" onclick="showLoadGame()">📂 继续前缘</button>
+            <button class="splash-btn" onclick="showSettings()">⚙ 设置</button>
+        </div>
+        <p class="splash-version">v1.0</p>
+    </div>
+</div>
+
+<!-- 主游戏容器 -->
+<div id="app" style="display:none;">
+
+    <!-- 状态面板(从底部弹出) -->
+    <div id="statOverlay" onclick="toggleStats()"></div>
+    <div id="statSheet">
+        <div class="stat-handle" onclick="toggleStats()">
+            <div class="handle-bar"></div>
+        </div>
+        <div class="stat-scroll" id="statContent"></div>
+    </div>
+
+    <!-- 游戏界面 -->
+    <div id="game">
+
+        <!-- 顶栏 -->
+        <div id="topbar">
+            <button class="top-btn" onclick="toggleStats()" id="statBtn" aria-label="属性">☰</button>
+            <div class="top-res" id="resBar"></div>
+            <button class="top-btn" onclick="openMenu()" aria-label="菜单">⋯</button>
+        </div>
+
+        <!-- 叙事主区域 -->
+        <div id="story" onclick="handleStoryTap()">
+            <div id="storyInner">
+                <p class="t-title">▎道韵·洪荒镇道</p>
+                <p class="t-dim" style="text-align:center;">道蕴初醒，洪荒渐明</p>
+            </div>
+        </div>
+
+        <!-- 操作按钮区域 -->
+        <div id="actions"></div>
+
+    </div>
+
+    <!-- 底部导航 -->
+    <div id="navbar">
+        <button class="nav-item active" data-tab="main" data-desc="回到主页" aria-label="主页">
+            <span class="nav-icon">[=]</span>
+            <span class="nav-label">主页</span>
+        </button>
+        <button class="nav-item" data-tab="cultivate" data-desc="修炼突破求道" aria-label="修炼">
+            <span class="nav-icon">[修]</span>
+            <span class="nav-label">修炼</span>
+        </button>
+        <button class="nav-item" data-tab="town" data-desc="建设边陲重镇" aria-label="城镇">
+            <span class="nav-icon">[城]</span>
+            <span class="nav-label">城镇</span>
+        </button>
+        <button class="nav-item" data-tab="explore" data-desc="探索未知之地" aria-label="探索">
+            <span class="nav-icon">[探]</span>
+            <span class="nav-label">探索</span>
+        </button>
+        <button class="nav-item" data-tab="market" data-desc="交易炼丹锻造" aria-label="坊市">
+            <span class="nav-icon">[市]</span>
+            <span class="nav-label">坊市</span>
+        </button>
+        <button class="nav-item" data-tab="inventory" data-desc="查看全部家当" aria-label="背包">
+            <span class="nav-icon">[袋]</span>
+            <span class="nav-label">背包</span>
+        </button>
+    </div>
+
+</div>
+
+<!-- 菜单弹窗 -->
+<div id="menuOverlay" onclick="closeMenu()" style="display:none;"></div>
+<div id="menuSheet" style="display:none;">
+    <div class="menu-header">
+        <span>道韵·洪荒镇道</span>
+        <button id="menuCloseBtn">✕</button>
+    </div>
+    <div class="menu-body" id="menuBody">
+        <div class="menu-item" data-action="daotitles">✦ 万道图录</div>
+        <div class="menu-item" data-action="resonance">[共] 万道共鸣</div>
+        <div class="menu-item" data-action="leaderboard">[榜] 洪荒榜单</div>
+        <div class="menu-item" data-action="fragments">[碎] 天道碎片</div>
+        <div class="menu-item" data-action="destiny">[命] 天命命格</div>
+        <div class="menu-item" data-action="achievements">[成] 成就</div>
+        <div class="menu-item" data-action="factions">[势] 势力</div>
+        <div class="menu-item" data-action="storylog">[剧] 剧情回顾</div>
+        <div class="menu-item" data-action="help">[引] 游戏指引</div>
+        <div class="menu-divider"></div>
+        <div class="menu-item" data-action="save">[存] 保存</div>
+        <div class="menu-item" data-action="load">[档] 读档</div>
+        <div class="menu-item" data-action="settings">[设] 设置</div>
+    </div>
+</div>
+
+<!-- 通知 -->
+<div id="toast"></div>
+
+<script src="js/data.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/ui.js"></script>
+<script>
+// 全局错误捕获（上架版本）
+window.onerror=function(msg,url,line,col,err){try{console.error('['+line+':'+col+']',msg);}catch(e){}};
+window.addEventListener('unhandledrejection',function(e){try{console.error('Promise:',e.reason);}catch(ex){}});
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof initGame === 'function') initGame();
+});
+</script>
+</body>
+</html>
