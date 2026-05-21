@@ -362,13 +362,28 @@ function showPracticeBattle(){
     t('你站在演武场中央，等待对手...');
     var dummy={name:'演武傀儡',power:Math.floor(pp.power*0.8),atk:Math.floor(pp.atk*0.7),def:Math.floor(pp.def*0.7),maxHp:Math.floor(pp.hp*0.8)};
     t('一具同阶演武傀儡缓缓升起，战力约'+dummy.power+'。');
-    var result=doBattle(dummy);
+    div();hl('[ 选择招式 ]');
+    var skillActs=[];
+    for(var sk in BATTLE_SKILLS){
+        var s=BATTLE_SKILLS[sk];
+        (function(skillId){skillActs.push({text:'[ '+s.name+' ]',cb:function(){
+            if(s.cost>0&&G.player.spirit<s.cost){toast('灵力不足','dan');return;}
+            doPracticeBattle(dummy,skillId);
+        },sm:true});})(sk);
+    }
+    btns(skillActs);
+}
+function doPracticeBattle(dummy,skillId){
+    clearStory();title('* 演武');
+    var result=doBattle(dummy,skillId);
     div();hl(result.win?'[ 胜 ]':'[ 负 ]');
-    var logs=result.log;for(var li=0;li<logs.length&&li<6;li++)dim(logs[li].text);
+    var logs=result.log;for(var li=0;li<logs.length&&li<8;li++)dim(logs[li].text);
     if(result.win){
-        var daoGain=Math.floor(5+p.realm*3+Math.random()*5);
+        var daoGain=Math.floor(5+G.player.realm*3+Math.random()*5);
+        var stoneGain=Math.floor(3+G.player.realm*2);
         G.player.dao_essence+=daoGain;
-        he('演武感悟：道蕴 +'+daoGain);
+        G.player.spirit_stones+=stoneGain;
+        he('演武感悟：道蕴 +'+daoGain+' | 灵石 +'+stoneGain);
         var baEff3=getPathEffects('ba_dao');
         if(baEff3.battleEnlightenChance>0&&Math.random()<baEff3.battleEnlightenChance){
             G.player.enlightenment=(G.player.enlightenment||0)+1;
