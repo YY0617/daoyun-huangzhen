@@ -31,6 +31,7 @@ function createNewGame(name) {
     G.player.destiny = d.id;
     G.town.lastTick = Date.now();
     G._createTime = Date.now(); // 用于计算游戏年龄
+    checkDaoTitles(); // ★ 创建游戏时立即检查初始可获得的道号
     saveGame();
     return G;
 }
@@ -1487,6 +1488,7 @@ function checkDaoTitles() {
         var ok=checkTitleCond(t.cond);
         if(ok){G.titles.push(t.id);newlyEarned.push(t);}
     }
+    if(newlyEarned.length>0)saveGame(); // ★ 获得新道号时立即保存
     return newlyEarned;
 }
 
