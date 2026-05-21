@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0a0a0a"/>
+  <rect x="16" y="16" width="480" height="480" fill="none" stroke="#c9a64c" stroke-width="5" rx="20"/>
+  <text x="256" y="290" font-family="SimSun,STSong,serif" font-size="200" font-weight="bold" fill="#c9a64c" text-anchor="middle" dominant-baseline="central">道</text>
+  <line x1="140" y1="370" x2="372" y2="370" stroke="#c9a64c" stroke-width="4" opacity="0.5"/>
+  <text x="256" y="435" font-family="SimSun,STSong,serif" font-size="48" fill="#7a7a6a" text-anchor="middle">洪荒镇道</text>
+</svg>
