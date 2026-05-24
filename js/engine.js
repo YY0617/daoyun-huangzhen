@@ -1798,7 +1798,7 @@ function checkNPCEncounter() {
 
 // ========== 激励广告系统 ==========
 // 广告API：TapTap广告SDK占位
-var ADS_ENABLED = false; // TapTap试玩期间禁用，上架后改为true
+var ADS_ENABLED = true; // TapTap审核期间可动态关闭
 
 var adApi = {
     isReady: function(){return typeof __rewardedAdReady!=='undefined'?__rewardedAdReady:false;},
