@@ -234,8 +234,7 @@ function renderMain(){
     btnsList.push({text:'[ 修炼 ]',cb:function(){switchTab('cultivate');}});
     btnsList.push({text:'[ 城镇 ]',cb:function(){switchTab('town');}});
     btnsList.push({text:'[ 探索 ]',cb:function(){switchTab('explore');}});
-    // 广告入口（TapTap试玩期间隐藏）
-    // if(canShowAd())btnsList.push({text:'[ 激励·加速 ]',cb:function(){showAdPanel();},sm:true});
+    if(canShowAd())btnsList.push({text:'[ 激励·加速 ]',cb:function(){showAdPanel();},sm:true});
     btns(btnsList);
 }
 
@@ -997,11 +996,38 @@ function doFactionEv(idx){
     btns([{text:'[ 继续 ]',cb:showFactions,pri:true}]);toast('势力事件完成','suc');
 }
 
-// 激励广告面板（TapTap试玩期间禁用）
+// 激励广告面板
 function showAdPanel(){
     clearStory();title('* 激励·加速');
-    dim('激励功能暂未开放。');
-    div();btns([{text:'[ 返回 ]',cb:renderMain}]);
+    dim('观看激励广告获得增益效果');
+    var ads=getAvailableAds();
+    if(ads.length===0){
+        dim('暂无可用激励，请等待冷却（3分钟CD）');
+        div();btns([{text:'[ 返回 ]',cb:renderMain}]);
+        return;
+    }
+    var acts=[];
+    for(var ai=0;ai<ads.length;ai++){
+        var a=ads[ai];
+        info(a.icon+' '+a.name+'——'+a.desc);
+        acts.push({text:'[ 观看激励 '+a.name+' ]',cb:function(id){return function(){
+            if(!adApi.isReady()){
+                // 模拟激励广告（实际接入SDK后此处改为真广告调用）
+                var r=triggerAdReward(id);
+                if(r.success){
+                    renderRes();toast('获得奖励！'+r.reward.type+' +'+r.reward.amount,'suc');
+                    showAdPanel();
+                }else{
+                    toast(r.reason,'dan');
+                }
+            }else{
+                adApi.showRewarded();
+                // 注册SDK回调在外部，此处不处理
+            }
+        };}(a.id),sm:true});
+    }
+    acts.push({text:'[ 返回 ]',cb:renderMain});
+    btns(acts);
 }
 
 // 初始化
